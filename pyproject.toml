@@ -1,0 +1,20 @@
+[project]
+name = "portfolio-mle-finance"
+version = "0.1.0"
+description = "Add your description here"
+authors = [
+    { name = "TLiemNGY", email = "thanh-liem.nguyen.2023@polytechnique.edu" }
+]
+requires-python = ">=3.11"
+dependencies = [
+    "google-cloud-bigquery>=3.45.0",
+    "pandas>=3.0.5",
+    "pyarrow>=25.0.1",
+]
+
+[project.scripts]
+portfolio-mle-finance = "portfolio_mle_finance:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"
