@@ -36,7 +36,7 @@ def build_prices_dataframe(tickers: list[str]) -> pd.DataFrame:
     rows = []
     for ticker in tickers:
         price = fetch_current_price(ticker)
-        if price is not None:
+        if pd.notna(price):
             rows.append({"ticker": ticker, "price_eur": price, "fetched_at": fetched_at})
     return pd.DataFrame(rows)
 
