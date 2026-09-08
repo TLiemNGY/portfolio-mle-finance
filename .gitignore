@@ -4,8 +4,10 @@ __pycache__/
 *.egg-info/
 venv/
 .venv/
+.pytest_cache/
+dist/
+build/
 .DS_Store
 *.log
 credentials/
 *.json
-!package.json

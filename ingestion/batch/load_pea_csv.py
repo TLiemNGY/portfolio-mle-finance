@@ -1,6 +1,7 @@
 """Batch ingestion of PEA portfolio CSV files into BigQuery."""
 
 import pandas as pd
+from pandas import Timestamp
 from google.cloud import bigquery
 
 PROJECT_ID = "portfolio-mle-finance"
@@ -32,6 +33,12 @@ def validate_portfolio(df: pd.DataFrame) -> None:
 
     if (df["purchase_price_eur"] <= 0).any():
         raise ValueError("Negative or zero purchase price detected")
+
+    if (df["unrealized_pnl_pct"] < -100).any():
+        raise ValueError("Unrealized P&L below -100% detected")
+
+    if (df["purchase_date"] > Timestamp.now()).any():
+        raise ValueError("Purchase date in the future detected")
 
     print(f"Validation OK — {len(df)} rows conform.")
 
