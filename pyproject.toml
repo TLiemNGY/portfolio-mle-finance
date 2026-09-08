@@ -9,6 +9,7 @@ requires-python = ">=3.11"
 dependencies = [
     "google-cloud-bigquery>=3.45.0",
     "pandas>=3.0.5",
+    "pandas-gbq>=0.35.2",
     "pyarrow>=25.0.1",
     "yfinance>=1.7.0",
 ]
