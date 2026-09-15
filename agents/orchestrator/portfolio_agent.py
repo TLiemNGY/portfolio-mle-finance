@@ -3,15 +3,15 @@
 import os
 
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain.agents import create_agent
+from langchain_google_genai import ChatGoogleGenerativeAI
 
-from agents.tools.portfolio_tools import get_portfolio_summary, get_latest_price
+from agents.tools.portfolio_tools import get_latest_price, get_portfolio_summary
 
 load_dotenv()
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+    model="gemini-3.1-flash-lite",
     google_api_key=os.environ["GOOGLE_API_KEY"],
 )
 

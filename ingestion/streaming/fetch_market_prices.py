@@ -25,7 +25,7 @@ def fetch_current_price(ticker: str) -> float | None:
     """
     try:
         return yf.Ticker(ticker).info["currentPrice"]
-    except Exception as e:
+    except Exception as e: # noqa: BLE001 — intentional catch-all: a single ticker failure must not stop the batch
         print(f"Failed to fetch current price for {ticker}: {e}")
         return None
 
