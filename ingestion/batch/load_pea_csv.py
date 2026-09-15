@@ -1,17 +1,26 @@
 """Batch ingestion of PEA portfolio CSV files into BigQuery."""
 
 import pandas as pd
-from pandas import Timestamp
 from google.cloud import bigquery
+from pandas import Timestamp
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
 
 REQUIRED_PORTFOLIO_COLUMNS = {
-    "ticker", "name", "sector", "purchase_date", "quantity",
-    "purchase_price_eur", "current_price_eur", "invested_value_eur",
-    "current_value_eur", "unrealized_pnl_eur", "unrealized_pnl_pct",
-    "currency", "account_type",
+    "ticker",
+    "name",
+    "sector",
+    "purchase_date",
+    "quantity",
+    "purchase_price_eur",
+    "current_price_eur",
+    "invested_value_eur",
+    "current_value_eur",
+    "unrealized_pnl_eur",
+    "unrealized_pnl_pct",
+    "currency",
+    "account_type",
 }
 
 
@@ -60,11 +69,15 @@ def load_table(client: bigquery.Client, df: pd.DataFrame, table_name: str) -> No
 def main() -> None:
     client = bigquery.Client(project=PROJECT_ID)
 
-    portfolio_df = pd.read_csv("data/samples/pea_portfolio.csv", parse_dates=["purchase_date"])
+    portfolio_df = pd.read_csv(
+        "data/samples/pea_portfolio.csv", parse_dates=["purchase_date"]
+    )
     validate_portfolio(portfolio_df)
     load_table(client, portfolio_df, "portfolio")
 
-    transactions_df = pd.read_csv("data/samples/pea_transactions.csv", parse_dates=["date"])
+    transactions_df = pd.read_csv(
+        "data/samples/pea_transactions.csv", parse_dates=["date"]
+    )
     load_table(client, transactions_df, "transactions")
 
     allocation_df = pd.read_csv("data/samples/pea_sector_allocation.csv")

@@ -1,6 +1,6 @@
 """Fetches current market prices for portfolio tickers and appends them to BigQuery."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import pandas as pd
 import yfinance as yf
@@ -32,12 +32,14 @@ def fetch_current_price(ticker: str) -> float | None:
 
 def build_prices_dataframe(tickers: list[str]) -> pd.DataFrame:
     """Fetches prices for all given tickers and returns a DataFrame ready for loading."""
-    fetched_at = datetime.now(timezone.utc)
+    fetched_at = datetime.now(UTC)
     rows = []
     for ticker in tickers:
         price = fetch_current_price(ticker)
         if pd.notna(price):
-            rows.append({"ticker": ticker, "price_eur": price, "fetched_at": fetched_at})
+            rows.append(
+                {"ticker": ticker, "price_eur": price, "fetched_at": fetched_at}
+            )
     return pd.DataFrame(rows)
 
 

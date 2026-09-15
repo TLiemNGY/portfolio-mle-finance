@@ -1,13 +1,13 @@
 """Fetches recent financial news for portfolio tickers via GDELT and stores them in Cloud Storage."""
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-import requests
-from gdeltdoc import GdeltDoc, Filters
-from google.cloud import storage
-from tenacity import retry, wait_exponential, stop_after_attempt
-from unidecode import unidecode
 import pandas as pd
+import requests
+from gdeltdoc import Filters, GdeltDoc
+from google.cloud import storage
+from tenacity import retry, stop_after_attempt, wait_exponential
+from unidecode import unidecode
 
 PROJECT_ID = "portfolio-mle-finance"
 BUCKET_NAME = "portfolio-mle-finance-news"
@@ -65,7 +65,7 @@ def attribute_articles(articles_df, ticker_to_search_term: dict[str, str]) -> di
 
 def upload_articles(bucket: storage.Bucket, ticker: str, articles_json: str) -> None:
     """Uploads a ticker's articles as a JSON file to Cloud Storage."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
     file = f"news/{ticker}/{timestamp}.json"
     blob = bucket.blob(file)
     blob.upload_from_string(articles_json, content_type="application/json")
