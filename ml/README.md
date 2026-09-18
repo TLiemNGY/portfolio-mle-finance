@@ -53,3 +53,27 @@ this was a real bug caught during development, not a hypothetical.
 - `training/train_final_models.py` — Phase 2 (final model artifacts)
 - `training/visualize_results.py` — bar chart of Phase 1 results
 - `models/*.pkl` — persisted final models (Phase 2 output)
+
+## Pipeline diagram
+
+```mermaid
+flowchart TD
+    A[get_price_history] --> B[compute_return_and_volatility_features]
+    B --> C[add_targets]
+    C --> D["compute_features()<br/>= B + C + dropna"]
+
+    D --> E["train.py — Phase 1"]
+    D --> F["train_final_models.py — Phase 2"]
+
+    E --> G["split.py:<br/>compute_cutoff_date<br/>train_test_split_with_purge"]
+    G --> H[Train set]
+    G --> I[Test set]
+    H --> J[Fit model on train]
+    J --> K[Evaluate on test]
+    K --> L["MAE/RMSE table (ADR-010)"]
+
+    F --> M[Fit model on 100% of data]
+    M --> N["joblib.dump → .pkl files"]
+
+    B -.->|"inference use, no dropna"| O["Agent tool (not yet built)"]
+```
