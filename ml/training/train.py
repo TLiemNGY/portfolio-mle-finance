@@ -55,7 +55,8 @@ def run_horizon(train: pd.DataFrame, test: pd.DataFrame, horizon: int, target_co
     return results
 
 
-def main() -> None:
+def build_results_df() -> pd.DataFrame:
+    """Runs the full multi-horizon model comparison and returns the results table."""
     client = bigquery.Client(project=PROJECT_ID)
     df = get_price_history(client)
     df = compute_features(df)
@@ -67,8 +68,12 @@ def main() -> None:
         train, test = train_test_split_with_purge(df, cutoff, purge_days=horizon)
         all_results.extend(run_horizon(train, test, horizon, columns["target"]))
 
-    results_df = pd.DataFrame(all_results).sort_values(["horizon_days", "mae"])
-    print(results_df.to_string(index=False))
+    return pd.DataFrame(all_results).sort_values(["horizon_days", "mae"])
+
+
+def main() -> None:
+    results_df = build_results_df()
+    print(results_df)
 
 
 if __name__ == "__main__":
