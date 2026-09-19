@@ -1,11 +1,12 @@
 """Fetches current market prices for portfolio tickers and appends them to BigQuery."""
 
 from datetime import UTC, datetime
-from ingestion.common import get_portfolio_tickers
 
 import pandas as pd
 import yfinance as yf
 from google.cloud import bigquery
+
+from ingestion.common import get_portfolio_tickers
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
@@ -19,7 +20,7 @@ def fetch_current_price(ticker: str) -> float | None:
     """
     try:
         return yf.Ticker(ticker).info["currentPrice"]
-    except Exception as e: # noqa: BLE001 — intentional catch-all: a single ticker failure must not stop the batch
+    except Exception as e:  # noqa: BLE001 — intentional catch-all: a single ticker failure must not stop the batch
         print(f"Failed to fetch current price for {ticker}: {e}")
         return None
 

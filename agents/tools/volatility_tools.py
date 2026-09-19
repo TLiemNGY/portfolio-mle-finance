@@ -1,7 +1,9 @@
-import joblib
 import argparse
-from langchain_core.tools import tool
+
+import joblib
 from google.cloud import bigquery
+from langchain_core.tools import tool
+
 from ml.training.build_features import compute_return_and_volatility_features
 
 PROJECT_ID = "portfolio-mle-finance"
@@ -9,6 +11,7 @@ DATASET = "finance_data"
 FEATURE_COLUMNS = ["volatility_5d", "volatility_10d", "volatility_20d", "volume"]
 
 client = bigquery.Client(project=PROJECT_ID)
+
 
 @tool
 def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
@@ -55,7 +58,6 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
     df = df[FEATURE_COLUMNS]
     most_recent_row = df.iloc[[-1]]
 
-
     if horizon_days == 5:
         model = joblib.load("ml/models/lightgbm_5d.pkl")
         forecast = float(model.predict(most_recent_row)[0])
@@ -67,7 +69,6 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
             "forecast_pct": f"{forecast * 100:.2f}%",
             "method": "LGBM",
         }
-
 
     elif horizon_days == 10:
         model = joblib.load("ml/models/lightgbm_10d.pkl")
@@ -93,6 +94,7 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
         }
     else:
         raise ValueError("Invalid horizon_days")
+
 
 def main(ticker, horizon_days):
     return get_volatility_forecast.func(ticker, horizon_days)

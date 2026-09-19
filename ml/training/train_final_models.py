@@ -4,11 +4,18 @@ import joblib
 from google.cloud import bigquery
 from lightgbm import LGBMRegressor
 
-from ml.training.build_features import add_targets, compute_return_and_volatility_features, get_price_history
+from ml.training.build_features import (
+    add_targets,
+    compute_return_and_volatility_features,
+    get_price_history,
+)
 
 PROJECT_ID = "portfolio-mle-finance"
 FEATURE_COLUMNS = ["volatility_5d", "volatility_10d", "volatility_20d", "volume"]
-MODEL_HORIZONS = [5, 10]  # LightGBM only beats the persistence baseline at these horizons (see ADR-010)
+MODEL_HORIZONS = [
+    5,
+    10,
+]  # LightGBM only beats the persistence baseline at these horizons (see ADR-010)
 
 
 def main() -> None:

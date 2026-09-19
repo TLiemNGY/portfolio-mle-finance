@@ -1,7 +1,8 @@
-from ingestion.common import get_portfolio_tickers
-import yfinance as yf
 import pandas as pd
+import yfinance as yf
 from google.cloud import bigquery
+
+from ingestion.common import get_portfolio_tickers
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
@@ -36,6 +37,7 @@ def load_tickers_price_history(client: bigquery.Client, df: pd.DataFrame) -> Non
     job.result()
     print(f"{len(df)} price history rows loaded into {table_id}")
 
+
 def main() -> None:
     client = bigquery.Client(project=PROJECT_ID)
     df = download_tickers_price_history(client)
@@ -45,6 +47,7 @@ def main() -> None:
         return
 
     load_tickers_price_history(client, df)
+
 
 if __name__ == "__main__":
     main()

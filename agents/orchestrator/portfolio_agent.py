@@ -16,7 +16,9 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=os.environ["GOOGLE_API_KEY"],
 )
 
-agent = create_agent(llm, tools=[get_portfolio_summary, get_latest_price, get_volatility_forecast])
+agent = create_agent(
+    llm, tools=[get_portfolio_summary, get_latest_price, get_volatility_forecast]
+)
 
 
 def main() -> None:

@@ -41,5 +41,7 @@ if __name__ == "__main__":
     train, test = train_test_split_with_purge(df, cutoff)
 
     print(f"Cutoff date: {cutoff}")
-    print(f"Train: {train.shape[0]} rows ({train['date'].min()} → {train['date'].max()})")
+    print(
+        f"Train: {train.shape[0]} rows ({train['date'].min()} → {train['date'].max()})"
+    )
     print(f"Test:  {test.shape[0]} rows ({test['date'].min()} → {test['date'].max()})")

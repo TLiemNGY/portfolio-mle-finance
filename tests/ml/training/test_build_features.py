@@ -14,12 +14,14 @@ def build_test_price_history(num_days: int = 50) -> pd.DataFrame:
     dates = pd.date_range(start="2026-01-01", periods=num_days, freq="D")
     prices = [100 + i for i in range(num_days)]
 
-    return pd.DataFrame({
-        "date": dates,
-        "ticker": "TEST.PA",
-        "close_price_eur": prices,
-        "volume": [1000] * num_days,
-    })
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "ticker": "TEST.PA",
+            "close_price_eur": prices,
+            "volume": [1000] * num_days,
+        }
+    )
 
 
 def test_compute_features_returns_non_empty_result():

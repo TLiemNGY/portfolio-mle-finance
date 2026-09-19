@@ -20,7 +20,9 @@ HORIZONS = {
 FEATURE_COLUMNS = ["volatility_5d", "volatility_10d", "volatility_20d", "volume"]
 
 
-def evaluate(y_true: pd.Series, y_pred: np.ndarray, horizon: int, model_name: str) -> dict:
+def evaluate(
+    y_true: pd.Series, y_pred: np.ndarray, horizon: int, model_name: str
+) -> dict:
     """Computes MAE and RMSE for a model's predictions, returned as a result row."""
     return {
         "horizon_days": horizon,
@@ -30,7 +32,9 @@ def evaluate(y_true: pd.Series, y_pred: np.ndarray, horizon: int, model_name: st
     }
 
 
-def run_horizon(train: pd.DataFrame, test: pd.DataFrame, horizon: int, target_column: str) -> list[dict]:
+def run_horizon(
+    train: pd.DataFrame, test: pd.DataFrame, horizon: int, target_column: str
+) -> list[dict]:
     """Trains and evaluates all models for a single prediction horizon."""
     X_train, y_train = train[FEATURE_COLUMNS], train[target_column]
     X_test, y_test = test[FEATURE_COLUMNS], test[target_column]
@@ -42,11 +46,15 @@ def run_horizon(train: pd.DataFrame, test: pd.DataFrame, horizon: int, target_co
 
     persistence_feature = HORIZONS[horizon]["feature"]
     persistence_prediction = X_test[persistence_feature]
-    results.append(evaluate(y_test, persistence_prediction, horizon, "baseline_persistence"))
+    results.append(
+        evaluate(y_test, persistence_prediction, horizon, "baseline_persistence")
+    )
 
     linear_model = LinearRegression()
     linear_model.fit(X_train, y_train)
-    results.append(evaluate(y_test, linear_model.predict(X_test), horizon, "linear_regression"))
+    results.append(
+        evaluate(y_test, linear_model.predict(X_test), horizon, "linear_regression")
+    )
 
     lgbm_model = LGBMRegressor(random_state=42)
     lgbm_model.fit(X_train, y_train)
