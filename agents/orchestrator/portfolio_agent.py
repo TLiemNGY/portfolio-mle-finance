@@ -7,6 +7,7 @@ from langchain.agents import create_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 
 from agents.tools.portfolio_tools import get_latest_price, get_portfolio_summary
+from agents.tools.volatility_tools import get_volatility_forecast
 
 load_dotenv()
 
@@ -15,7 +16,7 @@ llm = ChatGoogleGenerativeAI(
     google_api_key=os.environ["GOOGLE_API_KEY"],
 )
 
-agent = create_agent(llm, tools=[get_portfolio_summary, get_latest_price])
+agent = create_agent(llm, tools=[get_portfolio_summary, get_latest_price, get_volatility_forecast])
 
 
 def main() -> None:
