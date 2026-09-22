@@ -30,8 +30,29 @@ def extract_reply_text(content) -> str:
 
 
 @app.post("/chat", response_model=ChatResponse)
-def chat(request: ChatRequest) -> ChatResponse:
-    result = agent.invoke({"messages": [{"role": "user", "content": request.message}]})
+async def chat(request: ChatRequest) -> ChatResponse:
+    """Async by design: lets the server handle multiple concurrent requests
+    on a single worker instead of relying on FastAPI's thread-pool fallback
+    (the default for sync `def` endpoints).
+
+    Trade-off, stated explicitly: this is not fully non-blocking end to end.
+    The agent's tools call `google.cloud.bigquery.Client`, which has no
+    official async client — those calls remain synchronous under the hood.
+    LangGraph offloads them to its own internal thread pool when invoked via
+    `.ainvoke()`, similar in spirit to FastAPI's thread-pool fallback for
+    sync routes. This still avoids blocking the main event loop on the
+    Gemini API call itself (the genuinely async part), which is the
+    dominant source of latency here — a real, partial improvement, not a
+    complete one.
+
+    For this project's actual traffic (solo personal use), the plain sync
+    version would have been operationally indistinguishable — this async
+    version exists to demonstrate the pattern correctly, not because it was
+    load-bearing here.
+    """
+    result = await agent.ainvoke(
+        {"messages": [{"role": "user", "content": request.message}]}
+    )
     reply = extract_reply_text(result["messages"][-1].content)
     return ChatResponse(reply=reply)
 
