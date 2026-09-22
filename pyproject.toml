@@ -8,6 +8,7 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "db-dtypes>=1.7.1",
+    "fastapi>=0.141.1",
     "gdeltdoc>=1.12.0",
     "google-cloud-bigquery>=3.45.0",
     "google-cloud-storage>=3.14.1",
@@ -25,6 +26,7 @@ dependencies = [
     "scikit-learn>=1.9.1",
     "tenacity>=9.1.4",
     "unidecode>=1.4.0",
+    "uvicorn>=0.53.0",
     "yfinance>=1.7.0",
 ]
 
