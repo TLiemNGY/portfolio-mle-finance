@@ -19,14 +19,21 @@ def train_test_split_with_purge(
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Splits the dataset chronologically into train/test sets.
 
-    Rows whose target window (purge_days ahead) would overlap the test
-    period are dropped entirely, to prevent the target from leaking
-    information about the test period into the training set.
-    """
-    purge_start = cutoff_date - pd.Timedelta(days=purge_days)
+    Rows whose target window (purge_days trading days ahead) would overlap
+    the test period are dropped from train entirely, per ticker, to prevent
+    the target from leaking information about the test period into training.
 
-    train = df[df["date"] < purge_start]
+    The purge removes the last `purge_days` ROWS per ticker (not calendar
+    days), matching exactly how targets are built via a row-position shift
+    per ticker (see build_features.add_targets) — this makes the purge
+    exact regardless of weekends/holidays, unlike a calendar-day estimate.
+    """
+    before_cutoff = df[df["date"] < cutoff_date].sort_values(["ticker", "date"])
     test = df[df["date"] >= cutoff_date]
+
+    train = before_cutoff.groupby("ticker", group_keys=False).apply(
+        lambda g: g.iloc[:-purge_days]
+    )
 
     return train, test
 
