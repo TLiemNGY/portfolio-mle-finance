@@ -27,26 +27,26 @@ trained LightGBM model, and answers in natural language.
 ```mermaid
 flowchart TD
     subgraph Ingestion
-        A1[PEA CSV] --> B[(BigQuery)]
-        A2[yfinance: prices] --> B
-        A3[yfinance: price history] --> B
-        A4[Marketaux: news sentiment] --> B
+        A1[PEA CSV] -->|writes| B[(BigQuery)]
+        A2[yfinance: prices] -->|writes| B
+        A3[yfinance: price history] -->|writes| B
+        A4[Marketaux: news sentiment] -->|writes| B
     end
 
     subgraph ML
-        B --> C[compute_return_and_volatility_features]
+        B -->|reads| C[compute_return_and_volatility_features]
         C --> D[LightGBM models<br/>5d / 10d horizons]
-        D --> E[(ml/models/*.pkl)]
+        D -->|saves to| E[(ml/models/*.pkl)]
     end
 
     subgraph Agent
         F[LangGraph agent<br/>Gemini 3.1 Flash-Lite] --> G[get_portfolio_summary]
         F --> H[get_latest_price]
         F --> I[get_volatility_forecast]
-        G --> B
-        H --> B
-        I --> B
-        I --> E
+        G -->|queries| B
+        H -->|queries| B
+        I -->|queries| B
+        I -->|loads| E
     end
 
     subgraph API
