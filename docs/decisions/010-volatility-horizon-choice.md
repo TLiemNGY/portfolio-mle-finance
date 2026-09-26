@@ -10,16 +10,23 @@ LightGBM), trained on ~4,500 rows and evaluated on a chronologically
 held-out, purge-gapped test set (see ADR-009 for the price history
 ingestion strategy and the purge-gap methodology).
 
-Results (MAE, lower is better):
+Results (MAE, lower is better) — updated 2026-09-26 after fixing the
+purge gap leak (see ADR-016; original figures below the fix are no
+longer reported, as they were computed with a leak):
+
 | Horizon | Best model           | MAE      | vs. persistence baseline |
 |---------|-----------------------|----------|---------------------------|
-| 5 days  | LightGBM              | 0.005581 | -24%                      |
-| 10 days | LightGBM              | 0.004126 | -24%                      |
-| 20 days | Persistence baseline  | 0.003416 | LightGBM is +2% worse     |
+| 5 days  | LightGBM              | 0.005482 | -25%                      |
+| 10 days | LightGBM              | 0.004093 | -24%                      |
+| 20 days | Persistence baseline  | 0.003416 | LightGBM is +0.6% worse   |
 
 Note: overlapping rolling windows mean consecutive test rows are not
 fully independent observations; results should be read as indicative
 of a real but noisy signal, not as 1,128 independent trials.
+
+Note: these figures were regenerated after fixing a purge methodology
+bug (ADR-016). The original decision and conclusions were unaffected by
+the fix — see ADR-016 for details.
 
 ## Decision
 - Use LightGBM for the 5-day and 10-day volatility signals exposed to
