@@ -6,7 +6,7 @@ import pandas as pd
 from google.cloud import bigquery
 from pandas import Timestamp
 
-from config import PROJECT_ID
+from core.config import PROJECT_ID
 from ingestion.common import load_dataframe_into_bq
 
 logging.basicConfig(

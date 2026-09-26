@@ -47,7 +47,7 @@ if __name__ == "__main__":
     )
     from google.cloud import bigquery
 
-    from config import PROJECT_ID
+    from core.config import PROJECT_ID
     from ml.training.build_features import compute_features, get_price_history
 
     df = get_price_history(client=bigquery.Client(project=PROJECT_ID))

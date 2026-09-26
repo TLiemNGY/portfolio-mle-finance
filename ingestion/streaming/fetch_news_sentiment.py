@@ -7,7 +7,7 @@ import requests
 from dotenv import load_dotenv
 from google.cloud import bigquery
 
-from config import PROJECT_ID
+from core.config import PROJECT_ID
 from ingestion.common import get_portfolio_tickers, load_dataframe_into_bq
 
 load_dotenv()

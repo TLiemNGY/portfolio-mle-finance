@@ -1,15 +1,20 @@
+"""BigQuery-backed tool forecasting per-ticker volatility, using cached
+models loaded from GCS (see models.py) for the 5/10-day horizons."""
+
 import argparse
 import logging
 
-import joblib
 from google.cloud import bigquery
 from langchain_core.tools import tool
 
-from clients import get_client
-from config import DATASET, FEATURE_COLUMNS, MODEL_DIR, PROJECT_ID
+from core.clients import get_client
+from core.config import DATASET, FEATURE_COLUMNS, PROJECT_ID
+from core.models import get_model
 from ml.training.build_features import compute_return_and_volatility_features
 
 logger = logging.getLogger(__name__)
+
+MODEL_FILES = {5: "lightgbm_5d.pkl", 10: "lightgbm_10d.pkl"}
 
 
 @tool
@@ -29,6 +34,9 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
     - forecast_pct: pre-formatted percentage string, ready to show the user directly
     - forecast: raw decimal value, for any further calculation only
     """
+    if horizon_days not in {5, 10, 20}:
+        raise ValueError("Invalid horizon_days")
+
     client = get_client()
     query = f"""
             SELECT ticker, volume, close_price_eur, date
@@ -57,33 +65,8 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
     df = df[FEATURE_COLUMNS]
     most_recent_row = df.iloc[[-1]]
 
-    if horizon_days == 5:
-        model = joblib.load(f"{MODEL_DIR}/lightgbm_5d.pkl")
-        forecast = float(model.predict(most_recent_row)[0])
-
-        return {
-            "ticker": ticker,
-            "horizon_days": horizon_days,
-            "forecast": forecast,
-            "forecast_pct": f"{forecast * 100:.2f}%",
-            "method": "LGBM",
-        }
-
-    elif horizon_days == 10:
-        model = joblib.load(f"{MODEL_DIR}/lightgbm_10d.pkl")
-        forecast = float(model.predict(most_recent_row)[0])
-
-        return {
-            "ticker": ticker,
-            "horizon_days": horizon_days,
-            "forecast": forecast,
-            "forecast_pct": f"{forecast * 100:.2f}%",
-            "method": "LGBM",
-        }
-
-    elif horizon_days == 20:
+    if horizon_days == 20:
         forecast = float(most_recent_row["volatility_20d"].iloc[0])
-
         return {
             "ticker": ticker,
             "horizon_days": 20,
@@ -91,8 +74,16 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
             "forecast_pct": f"{forecast * 100:.2f}%",
             "method": "persistence",
         }
-    else:
-        raise ValueError("Invalid horizon_days")
+
+    model = get_model(MODEL_FILES[horizon_days])
+    forecast = float(model.predict(most_recent_row)[0])
+    return {
+        "ticker": ticker,
+        "horizon_days": horizon_days,
+        "forecast": forecast,
+        "forecast_pct": f"{forecast * 100:.2f}%",
+        "method": "LGBM",
+    }
 
 
 def main(ticker, horizon_days):

@@ -3,8 +3,8 @@
 from google.cloud import bigquery
 from langchain_core.tools import tool
 
-from clients import get_client
-from config import DATASET, PROJECT_ID
+from core.clients import get_client
+from core.config import DATASET, PROJECT_ID
 
 
 @tool

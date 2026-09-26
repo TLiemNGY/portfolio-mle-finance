@@ -6,6 +6,7 @@ from fastapi import FastAPI, Request
 from pydantic import BaseModel
 
 from agents.orchestrator.portfolio_agent import build_agent
+from core.models import get_model
 
 
 @asynccontextmanager
@@ -70,4 +71,11 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
 
 @app.get("/health")
 def health() -> dict:
-    return {"status": "ok"}
+    """Reports overall status and whether the volatility models are
+    actually loadable (from local disk or GCS) — not just that the
+    server process is alive."""
+    try:
+        get_model("lightgbm_5d.pkl")
+        return {"status": "ok", "models": "loaded"}
+    except Exception as e:  # noqa: BLE001 — health check must report any failure, not crash the endpoint
+        return {"status": "degraded", "models": f"error: {e}"}

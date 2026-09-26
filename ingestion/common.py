@@ -4,7 +4,7 @@ from typing import Literal
 import pandas as pd
 from google.cloud import bigquery
 
-from config import DATASET, PROJECT_ID
+from core.config import DATASET, PROJECT_ID
 
 logger = logging.getLogger(__name__)
 

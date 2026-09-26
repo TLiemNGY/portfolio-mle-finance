@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from google.cloud import bigquery
 from langchain_google_genai import ChatGoogleGenerativeAI
 
-from config import PROJECT_ID
+from core.config import PROJECT_ID
 
 load_dotenv()
 

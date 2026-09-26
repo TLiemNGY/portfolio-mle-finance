@@ -7,7 +7,7 @@ from langchain.agents import create_agent
 
 from agents.tools.portfolio_tools import get_latest_price, get_portfolio_summary
 from agents.tools.volatility_tools import get_volatility_forecast
-from clients import get_llm
+from core.clients import get_llm
 
 load_dotenv()
 
