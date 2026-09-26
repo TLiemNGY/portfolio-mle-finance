@@ -4,10 +4,9 @@ from typing import Literal
 import pandas as pd
 from google.cloud import bigquery
 
-logger = logging.getLogger(__name__)
+from config import DATASET, PROJECT_ID
 
-PROJECT_ID = "portfolio-mle-finance"
-DATASET = "finance_data"
+logger = logging.getLogger(__name__)
 
 
 def get_portfolio_tickers(client: bigquery.Client) -> list[str]:

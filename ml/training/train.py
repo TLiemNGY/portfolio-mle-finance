@@ -9,6 +9,7 @@ from lightgbm import LGBMRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
+from config import FEATURE_COLUMNS, PROJECT_ID
 from ml.training.build_features import compute_features, get_price_history
 from ml.training.split import compute_cutoff_date, train_test_split_with_purge
 
@@ -17,14 +18,11 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-PROJECT_ID = "portfolio-mle-finance"
-
 HORIZONS = {
     5: {"feature": "volatility_5d", "target": "target_volatility_5d"},
     10: {"feature": "volatility_10d", "target": "target_volatility_10d"},
     20: {"feature": "volatility_20d", "target": "target_volatility_20d"},
 }
-FEATURE_COLUMNS = ["volatility_5d", "volatility_10d", "volatility_20d", "volume"]
 
 
 def evaluate(

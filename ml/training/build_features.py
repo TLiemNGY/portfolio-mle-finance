@@ -3,13 +3,9 @@ import logging
 import pandas as pd
 from google.cloud import bigquery
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
-logger = logging.getLogger(__name__)
+from config import DATASET, PROJECT_ID
 
-PROJECT_ID = "portfolio-mle-finance"
-DATASET = "finance_data"
+logger = logging.getLogger(__name__)
 
 
 def get_price_history(client: bigquery.Client) -> pd.DataFrame:
@@ -62,6 +58,9 @@ def compute_features(df: pd.DataFrame) -> pd.DataFrame:
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    )
     df = get_price_history(client=bigquery.Client(project=PROJECT_ID))
     verify_gaps_in_data(df)
     df = compute_features(df)

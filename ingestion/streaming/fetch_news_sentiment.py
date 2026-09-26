@@ -7,6 +7,7 @@ import requests
 from dotenv import load_dotenv
 from google.cloud import bigquery
 
+from config import PROJECT_ID
 from ingestion.common import get_portfolio_tickers, load_dataframe_into_bq
 
 load_dotenv()
@@ -14,8 +15,6 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger(__name__)
-PROJECT_ID = "portfolio-mle-finance"
-DATASET = "finance_data"
 url = "https://api.marketaux.com/v1/news/all"
 
 

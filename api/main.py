@@ -1,12 +1,22 @@
 """FastAPI wrapper around the portfolio copilot agent."""
 
-from fastapi import FastAPI
+from contextlib import asynccontextmanager
+
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 
 from agents.orchestrator.portfolio_agent import build_agent
 
-app = FastAPI(title="Portfolio MLE Copilot API")
-agent = build_agent()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Builds the agent once at server startup, not at import time,
+    so importing this module (e.g. in tests) never requires credentials."""
+    app.state.agent = build_agent()
+    yield
+
+
+app = FastAPI(title="Portfolio MLE Copilot API", lifespan=lifespan)
 
 
 class ChatRequest(BaseModel):
@@ -31,7 +41,7 @@ def extract_reply_text(content) -> str:
 
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest) -> ChatResponse:
+async def chat(body: ChatRequest, request: Request) -> ChatResponse:
     """Async by design: lets the server handle multiple concurrent requests
     on a single worker instead of relying on FastAPI's thread-pool fallback
     (the default for sync `def` endpoints).
@@ -51,8 +61,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
     version exists to demonstrate the pattern correctly, not because it was
     load-bearing here.
     """
-    result = await agent.ainvoke(
-        {"messages": [{"role": "user", "content": request.message}]}
+    result = await request.app.state.agent.ainvoke(
+        {"messages": [{"role": "user", "content": body.message}]}
     )
     reply = extract_reply_text(result["messages"][-1].content)
     return ChatResponse(reply=reply)

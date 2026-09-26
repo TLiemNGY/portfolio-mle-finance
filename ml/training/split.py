@@ -4,9 +4,6 @@ import logging
 
 import pandas as pd
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 TARGET_HORIZON_DAYS = 5  # must match the shift() used to build target_volatility_5d
@@ -35,11 +32,13 @@ def train_test_split_with_purge(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    )
     from google.cloud import bigquery
 
+    from config import PROJECT_ID
     from ml.training.build_features import compute_features, get_price_history
-
-    PROJECT_ID = "portfolio-mle-finance"
 
     df = get_price_history(client=bigquery.Client(project=PROJECT_ID))
     df = compute_features(df)

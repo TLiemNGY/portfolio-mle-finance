@@ -6,6 +6,7 @@ import joblib
 from google.cloud import bigquery
 from lightgbm import LGBMRegressor
 
+from config import FEATURE_COLUMNS, PROJECT_ID
 from ml.training.build_features import (
     add_targets,
     compute_return_and_volatility_features,
@@ -17,8 +18,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-PROJECT_ID = "portfolio-mle-finance"
-FEATURE_COLUMNS = ["volatility_5d", "volatility_10d", "volatility_20d", "volume"]
 MODEL_HORIZONS = [
     5,
     10,

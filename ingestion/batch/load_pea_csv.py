@@ -6,15 +6,13 @@ import pandas as pd
 from google.cloud import bigquery
 from pandas import Timestamp
 
+from config import PROJECT_ID
 from ingestion.common import load_dataframe_into_bq
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-PROJECT_ID = "portfolio-mle-finance"
-DATASET = "finance_data"
 
 REQUIRED_PORTFOLIO_COLUMNS = {
     "ticker",

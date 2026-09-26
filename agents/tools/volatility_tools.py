@@ -9,9 +9,6 @@ from clients import get_client
 from config import DATASET, FEATURE_COLUMNS, MODEL_DIR, PROJECT_ID
 from ml.training.build_features import compute_return_and_volatility_features
 
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
 logger = logging.getLogger(__name__)
 
 
@@ -103,6 +100,9 @@ def main(ticker, horizon_days):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    )
     parser = argparse.ArgumentParser()
     parser.add_argument("--ticker", type=str, required=True)
     parser.add_argument("--horizon_days", type=int, required=True)

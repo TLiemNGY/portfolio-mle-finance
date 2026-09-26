@@ -7,15 +7,13 @@ import pandas as pd
 import yfinance as yf
 from google.cloud import bigquery
 
+from config import PROJECT_ID
 from ingestion.common import get_portfolio_tickers, load_dataframe_into_bq
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-PROJECT_ID = "portfolio-mle-finance"
-DATASET = "finance_data"
 
 
 def fetch_current_price(ticker: str) -> float | None:
