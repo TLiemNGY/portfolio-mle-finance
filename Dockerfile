@@ -1,15 +1,14 @@
 FROM python:3.11-slim
 
-# Installe uv en copiant son binaire officiel, plutôt que via pip (plus rapide, image plus légère)
+RUN apt-get update && apt-get install -y --no-install-recommends libgomp1 && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# Copie d'abord uniquement les fichiers de dépendances (voir note sur le cache de layers plus bas)
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-install-project
 
-# Copie le reste du code
 COPY . .
 RUN uv sync --frozen
 
