@@ -9,8 +9,10 @@ def test_get_latest_price_returns_dict_when_found():
         {"ticker": "MC.PA", "price_eur": 193.75, "fetched_at": "2026-09-15"}
     ]
 
-    with patch("agents.tools.portfolio_tools.bq_client") as mock_client:
-        mock_client.query.return_value = fake_result
+    mock_client = MagicMock()
+    mock_client.query.return_value = fake_result
+
+    with patch("agents.tools.portfolio_tools.get_client", return_value=mock_client):
         result = get_latest_price.func("MC.PA")
 
     assert result == {
@@ -21,24 +23,56 @@ def test_get_latest_price_returns_dict_when_found():
 
 
 def test_get_latest_price_returns_none_when_not_found():
-    """Mock BigQuery to return an empty list. It verifies that the function returns None."""
     fake_result = MagicMock()
     fake_result.result.return_value = []
 
-    with patch("agents.tools.portfolio_tools.bq_client") as mock_client:
-        mock_client.query.return_value = fake_result
+    mock_client = MagicMock()
+    mock_client.query.return_value = fake_result
+
+    with patch("agents.tools.portfolio_tools.get_client", return_value=mock_client):
         result = get_latest_price.func("MC.PA")
+
     assert result is None
 
 
 def test_get_portfolio_summary():
     fake_result = MagicMock()
     fake_result.result.return_value = [
-        {"ticker": "MC.PA", "price_eur": 193.75, "fetched_at": "2026-09-15"},
-        {"ticker": "OR.PA", "price_eur": 300.28, "fetched_at": "2026-09-10"},
+        {
+            "ticker": "MC.PA",
+            "name": "LVMH",
+            "sector": "Luxury",
+            "quantity": 10,
+            "current_value_eur": 1500.0,
+        },
+        {
+            "ticker": "OR.PA",
+            "name": "L'Oreal",
+            "sector": "Consumer Goods",
+            "quantity": 5,
+            "current_value_eur": 800.0,
+        },
     ]
 
-    with patch("agents.tools.portfolio_tools.bq_client") as mock_client:
-        mock_client.query.return_value = fake_result
+    mock_client = MagicMock()
+    mock_client.query.return_value = fake_result
+
+    with patch("agents.tools.portfolio_tools.get_client", return_value=mock_client):
         result = get_portfolio_summary.func()
-    assert isinstance(result, list)
+
+    assert result == [
+        {
+            "ticker": "MC.PA",
+            "name": "LVMH",
+            "sector": "Luxury",
+            "quantity": 10,
+            "current_value_eur": 1500.0,
+        },
+        {
+            "ticker": "OR.PA",
+            "name": "L'Oreal",
+            "sector": "Consumer Goods",
+            "quantity": 5,
+            "current_value_eur": 800.0,
+        },
+    ]

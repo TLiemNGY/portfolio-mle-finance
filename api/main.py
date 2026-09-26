@@ -3,9 +3,10 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
-from agents.orchestrator.portfolio_agent import agent
+from agents.orchestrator.portfolio_agent import build_agent
 
 app = FastAPI(title="Portfolio MLE Copilot API")
+agent = build_agent()
 
 
 class ChatRequest(BaseModel):

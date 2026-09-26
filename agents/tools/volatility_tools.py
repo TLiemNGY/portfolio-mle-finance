@@ -5,18 +5,14 @@ import joblib
 from google.cloud import bigquery
 from langchain_core.tools import tool
 
+from clients import get_client
+from config import DATASET, FEATURE_COLUMNS, MODEL_DIR, PROJECT_ID
 from ml.training.build_features import compute_return_and_volatility_features
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 logger = logging.getLogger(__name__)
-
-PROJECT_ID = "portfolio-mle-finance"
-DATASET = "finance_data"
-FEATURE_COLUMNS = ["volatility_5d", "volatility_10d", "volatility_20d", "volume"]
-
-client = bigquery.Client(project=PROJECT_ID)
 
 
 @tool
@@ -36,7 +32,7 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
     - forecast_pct: pre-formatted percentage string, ready to show the user directly
     - forecast: raw decimal value, for any further calculation only
     """
-
+    client = get_client()
     query = f"""
             SELECT ticker, volume, close_price_eur, date
             FROM `{PROJECT_ID}.{DATASET}.price_history`
@@ -65,7 +61,7 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
     most_recent_row = df.iloc[[-1]]
 
     if horizon_days == 5:
-        model = joblib.load("ml/models/lightgbm_5d.pkl")
+        model = joblib.load(f"{MODEL_DIR}/lightgbm_5d.pkl")
         forecast = float(model.predict(most_recent_row)[0])
 
         return {
@@ -77,7 +73,7 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> dict:
         }
 
     elif horizon_days == 10:
-        model = joblib.load("ml/models/lightgbm_10d.pkl")
+        model = joblib.load(f"{MODEL_DIR}/lightgbm_10d.pkl")
         forecast = float(model.predict(most_recent_row)[0])
 
         return {
