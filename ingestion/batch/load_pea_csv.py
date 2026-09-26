@@ -1,8 +1,17 @@
 """Batch ingestion of PEA portfolio CSV files into BigQuery."""
 
+import logging
+
 import pandas as pd
 from google.cloud import bigquery
 from pandas import Timestamp
+
+from ingestion.common import load_dataframe_into_bq
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
@@ -49,7 +58,7 @@ def validate_portfolio(df: pd.DataFrame) -> None:
     if (df["purchase_date"] > Timestamp.now()).any():
         raise ValueError("Purchase date in the future detected")
 
-    print(f"Validation OK — {len(df)} rows conform.")
+    logger.info(f"Validation OK — {len(df)} rows conform.")
 
 
 def load_table(client: bigquery.Client, df: pd.DataFrame, table_name: str) -> None:
@@ -59,11 +68,7 @@ def load_table(client: bigquery.Client, df: pd.DataFrame, table_name: str) -> No
     Never use this disposition in production — prefer WRITE_APPEND with
     explicit deduplication logic.
     """
-    table_id = f"{PROJECT_ID}.{DATASET}.{table_name}"
-    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
-    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
-    job.result()
-    print(f"{len(df)} rows loaded into {table_id}")
+    load_dataframe_into_bq(client, df, table_name, "WRITE_TRUNCATE")
 
 
 def main() -> None:

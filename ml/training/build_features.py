@@ -1,5 +1,12 @@
+import logging
+
 import pandas as pd
 from google.cloud import bigquery
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
@@ -18,10 +25,10 @@ def get_price_history(client: bigquery.Client) -> pd.DataFrame:
 
 
 def verify_gaps_in_data(df: pd.DataFrame) -> None:
-    """Prints a diagnostic count of suspicious gaps (>5 days) in the price history per ticker."""
+    """Logs a diagnostic count of suspicious gaps (>5 days) in the price history per ticker."""
     gaps = df.groupby("ticker")["date"].diff().dt.days
     suspicious_gaps = gaps[gaps > 5].count()
-    print(f"{suspicious_gaps} gaps of more than 5 days detected.")
+    logger.info(f"{suspicious_gaps} gaps of more than 5 days detected.")
 
 
 def compute_return_and_volatility_features(df: pd.DataFrame) -> pd.DataFrame:
@@ -58,5 +65,5 @@ if __name__ == "__main__":
     df = get_price_history(client=bigquery.Client(project=PROJECT_ID))
     verify_gaps_in_data(df)
     df = compute_features(df)
-    print(df.shape)
-    print(df.head())
+    logger.info(df.shape)
+    logger.info(df.head())

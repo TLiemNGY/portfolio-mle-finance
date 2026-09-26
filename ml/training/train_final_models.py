@@ -1,5 +1,7 @@
 """Trains final LightGBM models on all available data and persists them to disk."""
 
+import logging
+
 import joblib
 from google.cloud import bigquery
 from lightgbm import LGBMRegressor
@@ -9,6 +11,11 @@ from ml.training.build_features import (
     compute_return_and_volatility_features,
     get_price_history,
 )
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 PROJECT_ID = "portfolio-mle-finance"
 FEATURE_COLUMNS = ["volatility_5d", "volatility_10d", "volatility_20d", "volume"]
@@ -32,7 +39,7 @@ def main() -> None:
 
         model_path = f"ml/models/lightgbm_{horizon}d.pkl"
         joblib.dump(model, model_path)
-        print(f"Saved model for {horizon}-day horizon to {model_path}")
+        logger.info(f"Saved model for {horizon}-day horizon to {model_path}")
 
 
 if __name__ == "__main__":

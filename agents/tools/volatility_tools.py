@@ -1,10 +1,16 @@
 import argparse
+import logging
 
 import joblib
 from google.cloud import bigquery
 from langchain_core.tools import tool
 
 from ml.training.build_features import compute_return_and_volatility_features
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
@@ -107,4 +113,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     result = main(args.ticker, args.horizon_days)
-    print(result)
+    logger.info(result)

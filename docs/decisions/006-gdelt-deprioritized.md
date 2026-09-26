@@ -42,7 +42,7 @@ transactions, market prices).
 - The news/sentiment and RAG-over-news portions of the copilot
   product are deferred; the volatility model and portfolio-only
   copilot can proceed without them.
-- `ingestion/streaming/fetch_news.py` is kept in the repo, marked as
+- `../../ingestion/streaming/fetch_news_sentiment.py` is kept in the repo, marked as
   non-functional pending this decision, rather than deleted — it
   documents the batched-query and User-Agent-patch approaches
   already tried, for whoever revisits this.

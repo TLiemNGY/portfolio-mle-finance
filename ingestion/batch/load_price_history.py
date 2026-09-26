@@ -1,8 +1,15 @@
+import logging
+
 import pandas as pd
 import yfinance as yf
 from google.cloud import bigquery
 
-from ingestion.common import get_portfolio_tickers
+from ingestion.common import get_portfolio_tickers, load_dataframe_into_bq
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
@@ -22,7 +29,7 @@ def download_tickers_price_history(client: bigquery.Client) -> pd.DataFrame:
             df_ticker["ticker"] = ticker
             history_frames.append(df_ticker)
         except Exception as e:  # noqa: BLE001 — intentional catch-all: a single ticker failure must not stop the batch
-            print(f"Failed to fetch current price history for {ticker}: {e}")
+            logger.error(f"Failed to fetch current price history for {ticker}: {e}")
 
     if not history_frames:
         return pd.DataFrame()
@@ -31,11 +38,7 @@ def download_tickers_price_history(client: bigquery.Client) -> pd.DataFrame:
 
 
 def load_tickers_price_history(client: bigquery.Client, df: pd.DataFrame) -> None:
-    table_id = f"{PROJECT_ID}.{DATASET}.price_history"
-    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_TRUNCATE")
-    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
-    job.result()
-    print(f"{len(df)} price history rows loaded into {table_id}")
+    load_dataframe_into_bq(client, df, "price_history", "WRITE_TRUNCATE")
 
 
 def main() -> None:
@@ -43,7 +46,7 @@ def main() -> None:
     df = download_tickers_price_history(client)
 
     if df.empty:
-        print("No price history rows loaded, nothing to load.")
+        logger.info("No price history rows loaded, nothing to load.")
         return
 
     load_tickers_price_history(client, df)

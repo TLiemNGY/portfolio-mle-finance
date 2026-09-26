@@ -1,12 +1,18 @@
 """Fetches current market prices for portfolio tickers and appends them to BigQuery."""
 
+import logging
 from datetime import UTC, datetime
 
 import pandas as pd
 import yfinance as yf
 from google.cloud import bigquery
 
-from ingestion.common import get_portfolio_tickers
+from ingestion.common import get_portfolio_tickers, load_dataframe_into_bq
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 PROJECT_ID = "portfolio-mle-finance"
 DATASET = "finance_data"
@@ -21,7 +27,7 @@ def fetch_current_price(ticker: str) -> float | None:
     try:
         return yf.Ticker(ticker).info["currentPrice"]
     except Exception as e:  # noqa: BLE001 — intentional catch-all: a single ticker failure must not stop the batch
-        print(f"Failed to fetch current price for {ticker}: {e}")
+        logger.error(f"Failed to fetch current price for {ticker}: {e}")
         return None
 
 
@@ -38,25 +44,15 @@ def build_prices_dataframe(tickers: list[str]) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def load_prices(client: bigquery.Client, df: pd.DataFrame) -> None:
-    """Appends fetched prices to the market_prices table (never overwrites history)."""
-    table_id = f"{PROJECT_ID}.{DATASET}.market_prices"
-    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
-    job = client.load_table_from_dataframe(df, table_id, job_config=job_config)
-    job.result()
-    print(f"{len(df)} price rows loaded into {table_id}")
-
-
 def main() -> None:
     client = bigquery.Client(project=PROJECT_ID)
     tickers = get_portfolio_tickers(client)
     prices_df = build_prices_dataframe(tickers)
 
     if prices_df.empty:
-        print("No prices fetched, nothing to load.")
+        logger.info("No prices fetched, nothing to load.")
         return
-
-    load_prices(client, prices_df)
+    load_dataframe_into_bq(client, prices_df, "market_prices", "WRITE_APPEND")
 
 
 if __name__ == "__main__":

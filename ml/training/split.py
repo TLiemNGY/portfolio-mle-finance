@@ -1,6 +1,13 @@
 """Chronological train/test split with purge gap to prevent target leakage."""
 
+import logging
+
 import pandas as pd
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 TARGET_HORIZON_DAYS = 5  # must match the shift() used to build target_volatility_5d
 
@@ -40,8 +47,10 @@ if __name__ == "__main__":
     cutoff = compute_cutoff_date(df)
     train, test = train_test_split_with_purge(df, cutoff)
 
-    print(f"Cutoff date: {cutoff}")
-    print(
+    logger.info(f"Cutoff date: {cutoff}")
+    logger.info(
         f"Train: {train.shape[0]} rows ({train['date'].min()} → {train['date'].max()})"
     )
-    print(f"Test:  {test.shape[0]} rows ({test['date'].min()} → {test['date'].max()})")
+    logger.info(
+        f"Test:  {test.shape[0]} rows ({test['date'].min()} → {test['date'].max()})"
+    )

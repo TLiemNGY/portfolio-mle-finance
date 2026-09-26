@@ -1,5 +1,7 @@
 """Trains and compares baseline and candidate models across multiple volatility horizons."""
 
+import logging
+
 import numpy as np
 import pandas as pd
 from google.cloud import bigquery
@@ -9,6 +11,11 @@ from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 
 from ml.training.build_features import compute_features, get_price_history
 from ml.training.split import compute_cutoff_date, train_test_split_with_purge
+
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+logger = logging.getLogger(__name__)
 
 PROJECT_ID = "portfolio-mle-finance"
 
@@ -81,7 +88,7 @@ def build_results_df() -> pd.DataFrame:
 
 def main() -> None:
     results_df = build_results_df()
-    print(results_df)
+    logger.info(results_df)
 
 
 if __name__ == "__main__":
