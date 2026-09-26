@@ -28,12 +28,15 @@ def train_test_split_with_purge(
     per ticker (see build_features.add_targets) — this makes the purge
     exact regardless of weekends/holidays, unlike a calendar-day estimate.
     """
-    before_cutoff = df[df["date"] < cutoff_date].sort_values(["ticker", "date"])
+    before_cutoff = (
+        df[df["date"] < cutoff_date]
+        .sort_values(["ticker", "date"])
+        .reset_index(drop=True)
+    )
     test = df[df["date"] >= cutoff_date]
 
-    train = before_cutoff.groupby("ticker", group_keys=False).apply(
-        lambda g: g.iloc[:-purge_days]
-    )
+    rows_from_end = before_cutoff.groupby("ticker").cumcount(ascending=False)
+    train = before_cutoff[rows_from_end >= purge_days]
 
     return train, test
 
