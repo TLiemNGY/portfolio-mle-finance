@@ -15,6 +15,8 @@ terraform {
 }
 
 provider "google" {
-  project = "portfolio-mle-finance"
-  region  = "us-central1"
+  project                = "portfolio-mle-finance"
+  region                  = "us-central1"
+  user_project_override  = true
+  billing_project        = "portfolio-mle-finance"
 }
