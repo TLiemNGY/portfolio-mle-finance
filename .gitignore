@@ -13,3 +13,6 @@ credentials/
 *.json
 .idea/
 ml/models/*.pkl
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.backup
