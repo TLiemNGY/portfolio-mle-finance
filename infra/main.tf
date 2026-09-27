@@ -1,6 +1,11 @@
 # infra/main.tf
 
 terraform {
+  backend "gcs" {
+    bucket = "portfolio-mle-finance-tfstate"
+    prefix = "state"
+  }
+
   required_providers {
     google = {
       source  = "hashicorp/google"
