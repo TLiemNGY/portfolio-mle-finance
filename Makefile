@@ -11,3 +11,9 @@ fix:
 
 test:
 	uv run pytest -v
+
+refresh-weekly:
+	gcloud run jobs execute portfolio-weekly-refresh-job --region=us-central1
+
+refresh-biweekly:
+	gcloud run jobs execute portfolio-biweekly-refresh-job --region=us-central1
