@@ -5,6 +5,7 @@ import logging
 from dotenv import load_dotenv
 from langchain.agents import create_agent
 
+from agents.tools.news_tools import get_news_sentiment
 from agents.tools.portfolio_tools import get_latest_price, get_portfolio_summary
 from agents.tools.volatility_tools import get_volatility_forecast
 from core.clients import get_llm
@@ -21,7 +22,13 @@ def build_agent():
     """Builds the portfolio agent, with its LLM and tools."""
     llm = get_llm()
     return create_agent(
-        llm, tools=[get_portfolio_summary, get_latest_price, get_volatility_forecast]
+        llm,
+        tools=[
+            get_portfolio_summary,
+            get_latest_price,
+            get_volatility_forecast,
+            get_news_sentiment,
+        ],
     )
 
 
