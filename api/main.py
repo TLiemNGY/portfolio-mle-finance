@@ -1,11 +1,12 @@
 """FastAPI wrapper around the portfolio copilot agent."""
 
+import uuid
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from agents.orchestrator.portfolio_agent import build_agent
+from agents.orchestrator.portfolio_agent import build_agent, extract_turn_artifacts
 from core.models import get_model
 
 
@@ -21,24 +22,26 @@ app = FastAPI(title="Portfolio MLE Copilot API", lifespan=lifespan)
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(description="The user's message.")
+    thread_id: str | None = Field(
+        default=None,
+        description="Conversation identifier. Omit it to start a new "
+        "conversation; send back the one returned by the API to continue it.",
+    )
+
+
+class ToolArtifact(BaseModel):
+    tool: str = Field(description="Name of the tool that produced the data.")
+    data: dict = Field(description="Structured data returned by the tool.")
 
 
 class ChatResponse(BaseModel):
-    reply: str
-
-
-def extract_reply_text(content) -> str:
-    """Normalizes the agent's response content into a plain string,
-    since Gemini sometimes returns a plain string, sometimes a list
-    of structured content blocks (each with a 'text' key)."""
-    if isinstance(content, str):
-        return content
-    if isinstance(content, list):
-        return "".join(
-            block.get("text", "") for block in content if isinstance(block, dict)
-        )
-    return str(content)
+    reply: str = Field(description="The agent's answer, as plain text.")
+    thread_id: str = Field(description="Conversation identifier to send back.")
+    artifacts: list[ToolArtifact] = Field(
+        description="Structured data produced by tools during this turn, "
+        "rendered directly by the interface."
+    )
 
 
 @app.post("/chat", response_model=ChatResponse)
@@ -61,12 +64,21 @@ async def chat(body: ChatRequest, request: Request) -> ChatResponse:
     version would have been operationally indistinguishable — this async
     version exists to demonstrate the pattern correctly, not because it was
     load-bearing here.
+
+    Conversation memory: the agent's checkpointer keeps each conversation
+    under its thread_id (in process, lost on restart — see ADR-017).
     """
+    thread_id = body.thread_id or str(uuid.uuid4())
     result = await request.app.state.agent.ainvoke(
-        {"messages": [{"role": "user", "content": body.message}]}
+        {"messages": [{"role": "user", "content": body.message}]},
+        config={"configurable": {"thread_id": thread_id}},
     )
-    reply = extract_reply_text(result["messages"][-1].content)
-    return ChatResponse(reply=reply)
+    messages = result["messages"]
+    return ChatResponse(
+        reply=messages[-1].text,
+        thread_id=thread_id,
+        artifacts=extract_turn_artifacts(messages),
+    )
 
 
 @app.get("/health")

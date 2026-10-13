@@ -5,6 +5,7 @@ import uuid
 
 from dotenv import load_dotenv
 from langchain.agents import create_agent
+from langchain_core.messages import BaseMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
 from agents.tools.news_tools import get_news_sentiment
@@ -82,6 +83,24 @@ def build_agent():
     )
 
 
+def extract_turn_artifacts(messages: list[BaseMessage]) -> list[dict]:
+    """Returns the artifacts produced by tools during the last turn only.
+
+    With a checkpointer, `messages` holds the whole conversation. Only the
+    tool messages after the last user message belong to the current turn.
+    Each artifact is tagged with the name of the tool that produced it, so the
+    interface can pick the right rendering.
+    """
+    last_user_index = max(
+        i for i, message in enumerate(messages) if isinstance(message, HumanMessage)
+    )
+    return [
+        {"tool": message.name, "data": message.artifact}
+        for message in messages[last_user_index + 1 :]
+        if isinstance(message, ToolMessage) and message.artifact is not None
+    ]
+
+
 def main() -> None:
     agent = build_agent()
     thread_id = str(uuid.uuid4())
@@ -96,8 +115,10 @@ def main() -> None:
             {"messages": [{"role": "user", "content": user_input}]},
             config=config,
         )
-        answer = result["messages"][-1].content
-        logger.info(f"Agent: {answer}")
+        # .text returns the plain text of the message, whether its content
+        # is a string or a list of content blocks (as Gemini 3 returns).
+        answer = result["messages"][-1].text
+        logger.info("Agent: %s", answer)
 
 
 if __name__ == "__main__":
