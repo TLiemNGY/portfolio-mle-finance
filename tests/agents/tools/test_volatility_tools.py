@@ -30,50 +30,50 @@ def test_get_volatility_forecast_ticker_not_found():
     mock_client.query.return_value.to_dataframe.return_value = pd.DataFrame()
 
     with patch("agents.tools.volatility_tools.get_client", return_value=mock_client):
-        result = get_volatility_forecast.func("BAD.PA", 5)
+        content, artifact = get_volatility_forecast.func("BAD.PA", 5)
 
-    assert result["method"] == "error"
-    assert result["forecast"] is None
-    assert "BAD.PA" in result["error"]
+    assert artifact is None
+    assert "BAD.PA" in content
 
 
-def test_get_volatility_forecast_5d_uses_lightgbm():
+@pytest.mark.parametrize(
+    (
+        "horizon_days",
+        "predicted_volatility",
+        "expected_horizon_volatility",
+        "expected_low_price",
+    ),
+    [
+        (5, 0.05, 0.1118, 116.35),
+        (10, 0.03, 0.0949, 118.57),
+    ],
+)
+def test_get_volatility_forecast_uses_lightgbm(
+    horizon_days, predicted_volatility, expected_horizon_volatility, expected_low_price
+):
     df = build_test_price_history()
     fake_model = MagicMock()
-    fake_model.predict.return_value = np.array([0.05])
+    fake_model.predict.return_value = np.array([predicted_volatility])
 
     mock_client = MagicMock()
     mock_client.query.return_value.to_dataframe.return_value = df
 
     with (
         patch("agents.tools.volatility_tools.get_client", return_value=mock_client),
-        patch("agents.tools.volatility_tools.joblib.load", return_value=fake_model),
+        patch("agents.tools.volatility_tools.get_model", return_value=fake_model),
     ):
-        result = get_volatility_forecast.func("MC.PA", 5)
+        _, artifact = get_volatility_forecast.func("MC.PA", horizon_days)
 
-    assert result["method"] == "LGBM"
-    assert result["forecast"] == pytest.approx(0.05)
-    assert result["forecast_pct"] == "5.00%"
-    fake_model.predict.assert_called_once()
+    assert artifact["method"] == "LGBM"
+    assert artifact["daily_volatility"] == pytest.approx(predicted_volatility)
+    assert artifact["horizon_volatility"] == pytest.approx(
+        expected_horizon_volatility, abs=1e-4
+    )
+    assert artifact["ranges"][0]["std_devs"] == 1
+    assert artifact["ranges"][0]["low_price"] == pytest.approx(
+        expected_low_price, abs=0.01
+    )
 
-
-def test_get_volatility_forecast_10d_uses_lightgbm():
-    df = build_test_price_history()
-    fake_model = MagicMock()
-    fake_model.predict.return_value = np.array([0.03])
-
-    mock_client = MagicMock()
-    mock_client.query.return_value.to_dataframe.return_value = df
-
-    with (
-        patch("agents.tools.volatility_tools.get_client", return_value=mock_client),
-        patch("agents.tools.volatility_tools.joblib.load", return_value=fake_model),
-    ):
-        result = get_volatility_forecast.func("MC.PA", 10)
-
-    assert result["method"] == "LGBM"
-    assert result["forecast"] == pytest.approx(0.03)
-    assert result["forecast_pct"] == "3.00%"
     fake_model.predict.assert_called_once()
 
 
@@ -86,13 +86,13 @@ def test_get_volatility_forecast_20d_uses_persistence_without_loading_model():
 
     with (
         patch("agents.tools.volatility_tools.get_client", return_value=mock_client),
-        patch("agents.tools.volatility_tools.joblib.load") as mock_load,
+        patch("agents.tools.volatility_tools.get_model") as mock_get_model,
     ):
-        result = get_volatility_forecast.func("MC.PA", 20)
+        _, artifact = get_volatility_forecast.func("MC.PA", 20)
 
-    assert result["method"] == "persistence"
-    assert result["forecast"] == pytest.approx(expected_row["volatility_20d"])
-    mock_load.assert_not_called()
+    assert artifact["method"] == "persistence"
+    assert artifact["daily_volatility"] == pytest.approx(expected_row["volatility_20d"])
+    mock_get_model.assert_not_called()
 
 
 def test_get_volatility_forecast_invalid_horizon_raises():
