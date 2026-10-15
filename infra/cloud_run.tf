@@ -1,4 +1,8 @@
 # infra/cloud_run.tf
+#
+# OpenTofu owns the services and jobs; the deployment step (gcloud, later CD)
+# owns the image they run. The image written here is only the initial one —
+# see ADR-019. To know the running image, use `gcloud run ... describe`.
 
 resource "google_cloud_run_v2_service" "api" {
   name     = "portfolio-mle-finance-api"
@@ -31,6 +35,14 @@ resource "google_cloud_run_v2_service" "api" {
       }
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].containers[0].image,
+      client,
+      client_version,
+    ]
+  }
 }
 
 resource "google_cloud_run_v2_job" "weekly_refresh" {
@@ -40,8 +52,8 @@ resource "google_cloud_run_v2_job" "weekly_refresh" {
   template {
     template {
       service_account = google_service_account.mle_portfolio_sa.email
-      max_retries      = 1
-      timeout          = "600s"
+      max_retries     = 1
+      timeout         = "600s"
 
       containers {
         image   = "us-central1-docker.pkg.dev/portfolio-mle-finance/portfolio-mle-finance-repo/api:latest"
@@ -60,6 +72,14 @@ resource "google_cloud_run_v2_job" "weekly_refresh" {
       }
     }
   }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].template[0].containers[0].image,
+      client,
+      client_version,
+    ]
+  }
 }
 
 resource "google_cloud_run_v2_job" "biweekly_refresh" {
@@ -69,8 +89,8 @@ resource "google_cloud_run_v2_job" "biweekly_refresh" {
   template {
     template {
       service_account = google_service_account.mle_portfolio_sa.email
-      max_retries      = 1
-      timeout          = "600s"
+      max_retries     = 1
+      timeout         = "600s"
 
       containers {
         image   = "us-central1-docker.pkg.dev/portfolio-mle-finance/portfolio-mle-finance-repo/api:latest"
@@ -78,5 +98,13 @@ resource "google_cloud_run_v2_job" "biweekly_refresh" {
         args    = ["run", "python", "-m", "ingestion.run_biweekly"]
       }
     }
+  }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].template[0].containers[0].image,
+      client,
+      client_version,
+    ]
   }
 }
