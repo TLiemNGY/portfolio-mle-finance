@@ -36,10 +36,36 @@ def render_volatility(data: dict) -> None:
     st.dataframe(pd.DataFrame(rows), hide_index=True)
 
 
+def render_news(data: dict) -> None:
+    """Renders the articles of get_news_sentiment as a table."""
+    st.caption(
+        f"{data['ticker']} · articles des {data['lookback_days']} derniers jours"
+    )
+    rows = [
+        {
+            "Date": article["published_date"],
+            "Source": article["source"],
+            "Titre": article["title"],
+            "Sentiment (-1 à +1)": article["sentiment_score"],
+            "Lien": article["url"],
+        }
+        for article in data["articles"]
+    ]
+    st.dataframe(
+        pd.DataFrame(rows),
+        hide_index=True,
+        column_config={
+            "Sentiment (-1 à +1)": st.column_config.NumberColumn(format="%.2f"),
+            "Lien": st.column_config.LinkColumn(display_text="Ouvrir"),
+        },
+    )
+
+
 # Tool name -> function that renders its artifact. Tools without a renderer
 # are simply not displayed (their answer is still in the agent's reply).
 RENDERERS = {
     "get_volatility_forecast": render_volatility,
+    "get_news_sentiment": render_news,
 }
 
 
