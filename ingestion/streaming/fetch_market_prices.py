@@ -19,14 +19,25 @@ logger = logging.getLogger(__name__)
 def fetch_current_price(ticker: str) -> float | None:
     """Fetches the current price for a single ticker via Yahoo Finance.
 
+    Stocks expose `currentPrice`; ETFs (e.g. ESE.PA, PE500.PA) do not, so
+    `regularMarketPrice` is used as a fallback.
+
     Returns None if the price could not be fetched, instead of raising,
     so that one failing ticker does not stop the whole batch.
     """
     try:
-        return yf.Ticker(ticker).info["currentPrice"]
+        info = yf.Ticker(ticker).info
     except Exception as e:  # noqa: BLE001 — intentional catch-all: a single ticker failure must not stop the batch
-        logger.error(f"Failed to fetch current price for {ticker}: {e}")
+        logger.error("Failed to fetch market data for %s: %s", ticker, e)
         return None
+
+    price = info.get("currentPrice") or info.get("regularMarketPrice")
+    if price is None:
+        logger.warning(
+            "No price field for %s (neither currentPrice nor regularMarketPrice)",
+            ticker,
+        )
+    return price
 
 
 def build_prices_dataframe(tickers: list[str]) -> pd.DataFrame:

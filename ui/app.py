@@ -61,9 +61,44 @@ def render_news(data: dict) -> None:
     )
 
 
+def render_portfolio(data: dict) -> None:
+    """Renders the positions of get_portfolio_summary as a metric and a table."""
+    st.metric("Valeur totale du PEA", f"{data['total_value_eur']:,.2f} €")
+    rows = [
+        {
+            "Ticker": position["ticker"],
+            "Nom": position["name"],
+            "Secteur": position["sector"],
+            "Quantité": position["quantity"],
+            "Valeur (€)": position["current_value_eur"],
+            "Poids (%)": position["weight"] * 100,
+        }
+        for position in data["positions"]
+    ]
+    st.dataframe(
+        pd.DataFrame(rows),
+        hide_index=True,
+        column_config={
+            "Valeur (€)": st.column_config.NumberColumn(format="%.2f"),
+            "Poids (%)": st.column_config.NumberColumn(format="%.1f"),
+        },
+    )
+
+
+def render_latest_price(data: dict) -> None:
+    """Renders the result of get_latest_price as a metric."""
+    st.metric(
+        f"{data['ticker']} · dernier cours relevé",
+        f"{data['price_eur']:.2f} €",
+        help=f"Relevé du {data['fetched_date']} (cours mis à jour chaque semaine).",
+    )
+
+
 # Tool name -> function that renders its artifact. Tools without a renderer
 # are simply not displayed (their answer is still in the agent's reply).
 RENDERERS = {
+    "get_portfolio_summary": render_portfolio,
+    "get_latest_price": render_latest_price,
     "get_volatility_forecast": render_volatility,
     "get_news_sentiment": render_news,
 }
