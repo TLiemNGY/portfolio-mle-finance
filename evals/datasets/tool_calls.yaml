@@ -1,0 +1,195 @@
+# Agent evaluation: tool selection and arguments.
+#
+# Each case is a single-turn question and the tool calls the agent is
+# expected to make. `args` lists the arguments that must match exactly;
+# `expected_tool_calls: []` means the agent must not call any tool.
+# The order of the calls does not matter. Calls to tools listed in
+# `optional_tools` (e.g. a portfolio lookup to find a ticker) are ignored.
+#
+# Tags (capabilities tested):
+#   tool_selection         choosing the right tool
+#   ticker_resolution      company or ETF name -> Euronext ticker
+#   horizon_normalization  "a week", "a month"... -> 5 / 10 / 20 trading days
+#   parallel_calls         several tool calls for one question
+#   irrelevance            no tool when none is relevant
+#   regression             case derived from a real bug
+
+# --- Tool selection ---
+
+- id: positions_overview
+  tags: [tool_selection]
+  question: "Quelles sont mes positions ?"
+  rationale: >
+    Baseline: the portfolio question must call the portfolio tool, with no
+    argument.
+  expected_tool_calls:
+    - name: get_portfolio_summary
+      args: {}
+
+- id: latest_price_company_name
+  tags: [tool_selection, ticker_resolution, regression]
+  question: "Quel est le cours de LVMH ?"
+  rationale: >
+    Regression: an early version of the agent passed the company name ("LVMH")
+    as the ticker. Tools expect Euronext tickers.
+  expected_tool_calls:
+    - name: get_latest_price
+      args: {ticker: MC.PA}
+
+- id: news_company_name
+  tags: [tool_selection, ticker_resolution]
+  question: "Quelles sont les dernières news sur Sanofi ?"
+  rationale: >
+    Baseline for the news tool, with name-to-ticker resolution.
+  expected_tool_calls:
+    - name: get_news_sentiment
+      args: {ticker: SAN.PA}
+
+- id: volatility_explicit_horizon
+  tags: [tool_selection, regression]
+  question: "Quelle est la volatilité de LVMH sur 20 jours ?"
+  rationale: >
+    Regression: on 2026-10-11, a 20-day volatility question was answered with
+    a 5-day forecast. The requested horizon must be passed as is.
+  expected_tool_calls:
+    - name: get_volatility_forecast
+      args: {ticker: MC.PA, horizon_days: 20}
+
+# --- Horizon normalization ---
+
+- id: volatility_one_month
+  tags: [ticker_resolution, horizon_normalization]
+  question: "Quelle est la volatilité d'Airbus sur un mois ?"
+  rationale: >
+    "Un mois" must be mapped to 20 trading days, the convention stated in the
+    tool docstring.
+  expected_tool_calls:
+    - name: get_volatility_forecast
+      args: {ticker: AIR.PA, horizon_days: 20}
+
+- id: volatility_one_week
+  tags: [ticker_resolution, horizon_normalization]
+  question: "Quel est le risque sur Vinci pour la semaine à venir ?"
+  rationale: >
+    "Risque" and "la semaine à venir" must be understood as a 5-day volatility
+    forecast, although neither "volatilité" nor a number of days is mentioned.
+  expected_tool_calls:
+    - name: get_volatility_forecast
+      args: {ticker: DG.PA, horizon_days: 5}
+
+- id: volatility_two_weeks
+  tags: [ticker_resolution, horizon_normalization]
+  question: "Volatilité de Schneider Electric sur deux semaines ?"
+  rationale: >
+    "Deux semaines" must be mapped to 10 trading days.
+  expected_tool_calls:
+    - name: get_volatility_forecast
+      args: {ticker: SU.PA, horizon_days: 10}
+
+- id: volatility_unsupported_horizon
+  tags: [horizon_normalization]
+  question: "Quelle est la volatilité de LVMH sur 3 jours ?"
+  rationale: >
+    Product decision: the tool only supports 5, 10 and 20 days. The agent
+    should use the closest supported horizon (5) and say so, rather than
+    refuse.
+  expected_tool_calls:
+    - name: get_volatility_forecast
+      args: {ticker: MC.PA, horizon_days: 5}
+
+# --- Ticker resolution ---
+
+- id: etf_sp500_price
+  tags: [ticker_resolution]
+  question: "Quel est le cours de mon ETF S&P 500 ?"
+  rationale: >
+    The PEA ETF is PE500.PA (Euronext), not the US ETFs on the same index
+    (e.g. SPY). The agent may look it up in the portfolio first.
+  optional_tools: [get_portfolio_summary]
+  expected_tool_calls:
+    - name: get_latest_price
+      args: {ticker: PE500.PA}
+
+- id: etf_europe_volatility
+  tags: [ticker_resolution, horizon_normalization]
+  question: "Volatilité de l'ETF MSCI Europe sur un mois ?"
+  rationale: >
+    The MSCI Europe ETF held in the PEA is ESE.PA.
+  optional_tools: [get_portfolio_summary]
+  expected_tool_calls:
+    - name: get_volatility_forecast
+      args: {ticker: ESE.PA, horizon_days: 20}
+
+- id: company_name_typo
+  tags: [ticker_resolution]
+  question: "Les news sur LMVH ?"
+  rationale: >
+    A common typo of LVMH must still resolve to MC.PA.
+  optional_tools: [get_portfolio_summary]
+  expected_tool_calls:
+    - name: get_news_sentiment
+      args: {ticker: MC.PA}
+
+- id: company_outside_portfolio
+  tags: [ticker_resolution]
+  question: "Quelles sont les dernières news sur Hermès ?"
+  rationale: >
+    The agent must resolve tickers of companies the user does not hold
+    (Hermès = RMS.PA). The tool may return no article, since only portfolio
+    tickers are ingested: only the call is evaluated here.
+  optional_tools: [get_portfolio_summary]
+  expected_tool_calls:
+    - name: get_news_sentiment
+      args: {ticker: RMS.PA}
+
+# --- Parallel calls ---
+
+- id: volatility_three_horizons
+  tags: [parallel_calls, ticker_resolution]
+  question: "Prédiction de la volatilité sur AXA à 5, 10 et 20 jours ?"
+  rationale: >
+    One question, three horizons: the agent must make three calls, one per
+    horizon.
+  expected_tool_calls:
+    - name: get_volatility_forecast
+      args: {ticker: CS.PA, horizon_days: 5}
+    - name: get_volatility_forecast
+      args: {ticker: CS.PA, horizon_days: 10}
+    - name: get_volatility_forecast
+      args: {ticker: CS.PA, horizon_days: 20}
+
+- id: price_and_news_same_company
+  tags: [parallel_calls, tool_selection, ticker_resolution]
+  question: "Donne-moi le cours et les dernières news de TotalEnergies."
+  rationale: >
+    One question, two tools: both must be called for the same ticker.
+  expected_tool_calls:
+    - name: get_latest_price
+      args: {ticker: TTE.PA}
+    - name: get_news_sentiment
+      args: {ticker: TTE.PA}
+
+# --- Irrelevance ---
+
+- id: greeting
+  tags: [irrelevance]
+  question: "Bonjour !"
+  rationale: >
+    A greeting needs no data: calling a tool would waste time and money.
+  expected_tool_calls: []
+
+- id: off_topic_question
+  tags: [irrelevance]
+  question: "Quel temps fera-t-il demain à Paris ?"
+  rationale: >
+    Out of scope: no tool covers the weather. The agent must not call a
+    portfolio tool to look busy.
+  expected_tool_calls: []
+
+- id: unknown_company
+  tags: [irrelevance, ticker_resolution]
+  question: "Quelles sont les news sur la société Zorbix ?"
+  rationale: >
+    Product decision: for a company that does not exist, the agent must not
+    invent a ticker. It should ask the user for clarification instead.
+  expected_tool_calls: []
