@@ -16,3 +16,4 @@ ml/models/*.pkl
 infra/.terraform/
 infra/*.tfstate
 infra/*.tfstate.backup
+evals/results/
