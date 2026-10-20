@@ -178,6 +178,22 @@ LightGBM is only used where it measurably beats a naive baseline; the
 20-day forecast intentionally uses persistence instead of a trained
 model.
 
+## Agent evaluation
+
+Unit tests replace the LLM with fakes; a separate evaluation measures the agent
+itself on 17 reference questions: does it call the right tool, with the right
+arguments? Cases are tagged by capability (ticker resolution, horizon
+normalization, parallel calls, irrelevance…) and built from real failures — see
+[ADR-020](docs/decisions/020-agent-evaluation-tool-calls.md).
+
+```bash
+make eval
+```
+
+The first run scored 11/17: error analysis traced 5 of the 6 failures to a
+single system prompt rule. Fixing it reached 16/17 and revealed a regression on
+an ETF ticker, fixed in turn: 17/17.
+
 ## Project structure
 
 ```
@@ -211,10 +227,10 @@ ones:
 
 ## Known limitations / Roadmap
 
-- **No agent evaluation set yet** — no automated check that the agent
-  calls the right tool with the right arguments, that every figure in a
-  reply matches the tool data, or that it follows its system prompt.
-  Next on the roadmap.
+- **The agent evaluation covers tool calls only** — not yet the faithfulness of
+  the figures in the answer, nor multi-turn behaviour (memory, system prompt
+  rules). Each case runs once: a repetition option would measure the LLM's
+  variability.
 - **Volatility ranges assume a normal distribution** — the ~68% / ~95%
   probabilities are not yet checked against historical data. Planned:
   return distribution analysis (QQ-plot, kurtosis), empirical coverage
