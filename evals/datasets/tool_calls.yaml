@@ -191,5 +191,7 @@
   question: "Quelles sont les news sur la société Zorbix ?"
   rationale: >
     Product decision: for a company that does not exist, the agent must not
-    invent a ticker. It should ask the user for clarification instead.
+    invent a ticker and should ask the user for clarification. Checking the
+    portfolio first is acceptable.
+  optional_tools: [get_portfolio_summary]
   expected_tool_calls: []

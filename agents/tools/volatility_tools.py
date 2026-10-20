@@ -53,6 +53,8 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> tuple[str, dict |
             "OR.PA" for L'Oreal), NOT the company name.
         horizon_days: Forecast horizon in trading days. One of 5, 10, or 20.
             For "a week" use 5, for "two weeks" use 10, for "a month" use 20.
+            For any other horizon, use the closest supported one and say so
+            in your answer (e.g. 3 days -> 5).
 
     Returns:
         A short text summary to base the answer on. The forecast is the daily
