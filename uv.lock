@@ -2438,6 +2438,9 @@ dependencies = [
 ]
 
 [package.dev-dependencies]
+analysis = [
+    { name = "matplotlib" },
+]
 dev = [
     { name = "commitizen" },
     { name = "pre-commit" },
@@ -2471,6 +2474,7 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
+analysis = [{ name = "matplotlib", specifier = ">=3.11.2" }]
 dev = [
     { name = "commitizen", specifier = ">=4.18.1" },
     { name = "pre-commit", specifier = ">=4.6.2" },
