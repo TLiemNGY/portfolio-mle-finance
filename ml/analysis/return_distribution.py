@@ -36,7 +36,7 @@ SERIES = {
     "z_unconditional": ("#2a78d6", "Divided by the average volatility"),
     "z_conditional": ("#eb6834", "Divided by the previous day's 20-day volatility"),
 }
-HISTOGRAM_RANGE = (-8.0, 8.0)
+HISTOGRAM_RANGE = (-11.0, 11.0)
 
 
 def compute_return_stats(df: pd.DataFrame, column: str = "return") -> pd.DataFrame:
@@ -90,7 +90,7 @@ def plot_return_distribution(df: pd.DataFrame, path: Path) -> None:
     normal = NormalDist()
     fig = Figure(figsize=(11, 4.8), facecolor=SURFACE, layout="constrained")
     density_ax, qq_ax = fig.subplots(1, 2)
-    bins = np.linspace(*HISTOGRAM_RANGE, 49)
+    bins = np.linspace(*HISTOGRAM_RANGE, 67)
 
     for column, (color, label) in SERIES.items():
         z = np.sort(df[column].dropna().to_numpy())
