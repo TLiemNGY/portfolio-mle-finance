@@ -38,3 +38,13 @@ GDELT and Alpha Vantage NEWS_SENTIMENT for this need.
 - Article limit per request (3 on free tier) means multiple requests
   or pagination may be needed for deeper historical backfill; daily
   incremental ingestion is not affected.
+
+## Addendum (2026-10-22): sentiment scores of 0
+After several weekly runs, some tickers show many sentiment scores of exactly
+0 (24/24 articles for OR.PA, 23/24 for MC.PA; 0/24 for AIR.PA and SAN.PA).
+Inspecting the raw API response showed that these are not missing values: each
+score is computed on one highlight, the title of an event notice ("Presents at
+… Conference", "Earnings Call Presentation") whose full content is paywalled
+and which expresses no opinion. The scores are kept as is; the tool docstring
+tells the agent to present them as "no clear tone". For these tickers, the free
+tier of Marketaux provides little actual sentiment signal.

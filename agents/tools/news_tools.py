@@ -59,9 +59,11 @@ def get_news_sentiment(ticker: str) -> tuple[str, dict | None]:
     Returns:
         A text summary listing up to 5 articles, most recent first, each with
         its date, source, title, sentiment score and description. Sentiment
-        scores range from -1 (very negative) to +1 (very positive). Summarize
-        the articles in a few sentences; the full list is displayed to the user
-        separately.
+        scores range from -1 (very negative) to +1 (very positive). A score of
+        exactly 0 usually comes from an event notice (conference presentation,
+        earnings call listing) whose title expresses no opinion: describe it as
+        "no clear tone", not as balanced coverage. Summarize the articles in a
+        few sentences; the full list is displayed to the user separately.
         If there is no article in the last 30 days, the summary says so.
     """
     client = get_client()

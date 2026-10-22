@@ -17,7 +17,7 @@ def get_price_history(client: bigquery.Client) -> pd.DataFrame:
         """
     results = client.query(query)
 
-    return results.to_dataframe()
+    return results.to_dataframe(create_bqstorage_client=False)
 
 
 def verify_gaps_in_data(df: pd.DataFrame) -> None:

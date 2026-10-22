@@ -83,7 +83,7 @@ def get_volatility_forecast(ticker: str, horizon_days: int) -> tuple[str, dict |
     )
 
     results = client.query(query, job_config=job_config)
-    df = results.to_dataframe()
+    df = results.to_dataframe(create_bqstorage_client=False)
 
     if df.empty:
         return (
