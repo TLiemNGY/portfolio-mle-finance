@@ -1,19 +1,43 @@
+# Python
 __pycache__/
 *.pyc
-.env
 *.egg-info/
-venv/
 .venv/
+venv/
 .pytest_cache/
+.ruff_cache/
 dist/
 build/
+
+# IDE / OS
+.idea/
 .DS_Store
+
+# Logs
 *.log
+
+# Secrets and credentials (real values live in Secret Manager)
+.env
+.env.*
+!.env.example
 credentials/
 *.json
-.idea/
-ml/models/*.pkl
-infra/.terraform/
-infra/*.tfstate
-infra/*.tfstate.backup
+*.pem
+*.key
+*.p12
+
+# OpenTofu: state, plan and variable files can hold secrets in clear text
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+tfplan
+
+# Personal data: only synthetic samples are versioned
+data/*
+!data/samples/
+
+# Generated artifacts
+*.pkl
 evals/results/
