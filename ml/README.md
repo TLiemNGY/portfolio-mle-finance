@@ -8,8 +8,10 @@ Goal: honestly measure whether a trained model beats naive baselines,
 at each prediction horizon.
 
 - Splits historical data chronologically: train (past) / test (future,
-  never seen by the model), with a purge gap to prevent target leakage
-  (see ADR-009).
+  never seen by the model), with a purge gap to prevent target leakage:
+  the last `purge_days` rows of each ticker before the cutoff are
+  dropped from train, so no training target overlaps the test period
+  (see ADR-009, and ADR-016 for the calendar-day bug that was fixed).
 - Trains on train only, evaluates on test only.
 - Output: a comparison table (MAE/RMSE per model per horizon) — this
   is the deliverable of this phase, not a model to deploy.
@@ -28,7 +30,9 @@ testing already happened in Phase 1).
 - Only trains LightGBM for the 5-day and 10-day horizons (per ADR-010
   — no model is trained for 20 days; the agent tool uses the
   persistence baseline directly for that horizon instead).
-- Saves trained models to `ml/models/*.pkl` via joblib.
+- Saves trained models to `ml/models/*.pkl` via joblib and uploads them
+  to Cloud Storage; the deployed API loads them from there (they are
+  not baked into the Docker image).
 
 Run: `uv run python -m ml.training.train_final_models`
 
@@ -52,7 +56,10 @@ this was a real bug caught during development, not a hypothetical.
 - `training/train.py` — Phase 1 (methodology validation)
 - `training/train_final_models.py` — Phase 2 (final model artifacts)
 - `training/visualize_results.py` — bar chart of Phase 1 results
-- `models/*.pkl` — persisted final models (Phase 2 output)
+- `analysis/` — return-distribution and interval-coverage analyses of
+  the volatility ranges
+- `models/*.pkl` — local copies of the final models (git-ignored; the
+  API loads them from Cloud Storage)
 
 ## Pipeline diagram
 
@@ -73,7 +80,7 @@ flowchart TD
     K --> L["MAE/RMSE table (ADR-010)"]
 
     F --> M[Fit model on 100% of data]
-    M --> N["joblib.dump → .pkl files"]
+    M --> N["joblib.dump → .pkl files → Cloud Storage"]
 
-    B -.->|"inference use, no dropna"| O["Agent tool (not yet built)"]
+    B -.->|"inference use, no dropna"| O["get_volatility_forecast (agent tool)"]
 ```

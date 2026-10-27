@@ -76,22 +76,32 @@ flowchart TD
         U[Streamlit chat UI] -->|POST /chat<br/>message + thread_id| J[FastAPI on Cloud Run<br/>private, IAM-authenticated]
         J --> F
         J -->|reply + artifacts| U
+        S[(Secret Manager)] -.->|API keys| J
+    end
+
+    subgraph Cost["Cost guardrail"]
+        BU[Budget: €15/month<br/>alerts at 50 / 80 / 100%] -->|publishes| PS[Pub/Sub: billing-alerts]
+        PS -->|triggers| CF[Cloud Function: stop_billing<br/>billing kill switch]
     end
 ```
 
 ## Tech stack
 
-- **Ingestion**: Python, `yfinance`, Marketaux API, BigQuery; scheduled
-  with Cloud Run Jobs and Cloud Scheduler
+- **Ingestion**: Python, `yfinance`, Marketaux API; validation before
+  loading (covered by `pytest`) into BigQuery tables with explicit
+  schemas; scheduled with Cloud Run Jobs and Cloud Scheduler
 - **ML**: pandas, scikit-learn, LightGBM, chronological train/test split
-  with purge gap; models stored in Cloud Storage
+  with a per-ticker purge gap; models stored in Cloud Storage
 - **Agent**: LangGraph, Gemini API (`gemini-3.1-flash-lite`), in-process
   conversation memory (checkpointer)
 - **API**: FastAPI, Docker, Cloud Run (private service)
 - **Interface**: Streamlit
-- **Infrastructure**: OpenTofu (remote state on Cloud Storage), Secret
-  Manager, budget alerts + billing circuit breaker (Pub/Sub, Cloud Function)
-- **Quality**: `uv`, `ruff`, `pre-commit`, `pytest`, GitHub Actions CI
+- **Infrastructure**: OpenTofu (26 managed resources, remote state on
+  Cloud Storage), Secret Manager, budget alerts + billing kill switch
+  (Pub/Sub, Cloud Function)
+- **Quality**: `uv`, `ruff`, `pre-commit`, `commitizen` (conventional
+  commits), `pytest`, GitHub Actions CI (lint, format check and tests on
+  every push to `main`)
 
 ## Quickstart
 
@@ -120,6 +130,9 @@ cd infra
 tofu init
 tofu plan
 ```
+
+The project ID and billing account are currently hardcoded in `infra/`:
+adapt them before planning against your own project.
 
 ### 4. Run the ingestion pipeline (in order)
 
@@ -157,10 +170,37 @@ Chat interface (with the API running), in a second terminal:
 uv run --group ui streamlit run ui/app.py
 ```
 
-Docker:
+Docker image (used by the Cloud Run service and jobs):
 ```bash
 docker build -t portfolio-mle-finance-api .
-docker run -p 8080:8080 --env-file .env portfolio-mle-finance-api
+```
+
+The container needs Google Cloud credentials to reach BigQuery and Cloud
+Storage: on Cloud Run, the service account provides them. Deployment to
+Cloud Run is currently manual — see
+[ADR-019](docs/decisions/019-image-tagging-and-deployment-ownership.md).
+
+### 7. Query the deployed API
+
+The Cloud Run service is private (IAM-authenticated). With invoker
+rights on the project:
+
+```bash
+URL=$(gcloud run services describe portfolio-mle-finance-api --region us-central1 --format='value(status.url)')
+curl -X POST "$URL/chat" \
+  -H "Authorization: Bearer $(gcloud auth print-identity-token)" \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Quelle est la volatilite de LVMH sur 5 jours ?", "thread_id": "demo"}'
+```
+
+The response contains the agent's `reply` and the structured `artifacts`
+returned by the tools.
+
+### 8. Lint and tests
+
+```bash
+make lint   # ruff check
+make test   # pytest
 ```
 
 ## Key results
@@ -173,6 +213,12 @@ see [ADR-010](docs/decisions/010-volatility-horizon-choice.md):
 | 5 days  | LightGBM              | 0.005482 | -25%                      |
 | 10 days | LightGBM              | 0.004093 | -24%                      |
 | 20 days | Persistence baseline  | 0.003416 | LightGBM is +0.6% worse   |
+
+Evaluated on a chronologically held-out test set: the purge gap drops,
+per ticker, the training rows whose target would overlap the test
+period ([ADR-016](docs/decisions/016-purge-bug-fix.md)). Overlapping
+rolling windows make consecutive test rows correlated, so these figures
+are indicative of a real but noisy signal, not a precise estimate.
 
 LightGBM is only used where it measurably beats a naive baseline; the
 20-day forecast intentionally uses persistence instead of a trained
@@ -200,10 +246,12 @@ an ETF ticker, fixed in turn: 17/17.
 agents/         Agent orchestrator (system prompt, memory) + tools
 api/            FastAPI service (/chat, /health)
 core/           Shared configuration, lazily-created clients, model loading
+data/samples/   Synthetic PEA portfolio and transactions (fictitious positions and prices)
 docs/decisions/ Architecture Decision Records (ADRs)
+evals/          Agent evaluation (tool-call reference questions and scoring)
 infra/          Infrastructure as code (OpenTofu)
 ingestion/      Batch and streaming ingestion scripts + scheduled entry points
-ml/             Feature engineering, training, evaluation
+ml/             Feature engineering, training, evaluation, return analyses
 tests/          Unit tests
 ui/             Streamlit chat interface (thin client of the API)
 ```
@@ -232,10 +280,11 @@ ones:
   rules). Each case runs once: a repetition option would measure the LLM's
   variability.
 - **Volatility ranges assume a normal distribution** — the ~68% / ~95%
-  probabilities are not yet checked against historical data. Planned:
-  return distribution analysis (QQ-plot, kurtosis), empirical coverage
-  of the ranges, and an alternative without the normality assumption
-  (GARCH with Student-t errors, or LightGBM quantile regression).
+  probabilities shown to the user rely on a normal approximation, while
+  real returns have fatter tails. Return-distribution and
+  empirical-coverage analyses are in progress in [`ml/analysis/`](ml/analysis/);
+  an alternative without the normality assumption (GARCH with Student-t
+  errors, or LightGBM quantile regression) is planned.
 - **Conversation memory is in-process** — lost when the service restarts
   and not shared across instances; acceptable for a single user. Upgrade
   path: a persistent checkpointer. The history sent to the LLM is not
@@ -243,9 +292,12 @@ ones:
 - **News questions work per company only** — no semantic search across
   articles yet (e.g. "news about the luxury sector"). Planned: Vertex AI
   Search.
-- **No CD (continuous deployment) yet** — CI runs lint + tests; Cloud
-  Run deployment is still manual.
+- **No CD (continuous deployment) yet** — CI runs lint, format check and
+  tests on every push; Cloud Run deployment is still manual.
 - **No dev/staging/prod separation** — single GCP project today.
+- **Infrastructure values are hardcoded** — the project ID and billing
+  account are written directly in `infra/`; reusing the stack in
+  another project requires editing them.
 - **No model registry or experiment tracking** — models are versioned
   only by their file name in Cloud Storage.
 - **Single train/test split, not walk-forward validation** — the

@@ -19,8 +19,12 @@ the target shift works — exact regardless of weekends/holidays, rather
 than an approximate calendar-day conversion.
 
 ## Consequences
-- ADR-010's reported figures need to be regenerated with the fixed split
-  before being trusted as final.
+- ADR-010's figures were regenerated with the fixed split (2026-09-26);
+  figures computed before the fix are no longer reported. The decision
+  recorded in ADR-010 — LightGBM at 5 and 10 days, persistence baseline
+  at 20 days — is unchanged.
+- The fix is covered by
+  `tests/ml/training/test_split.py::test_train_test_split_purges_exact_row_count_per_ticker`.
 - A deeper validation (walk-forward cross-validation instead of a single
   split) remains deferred — this fix addresses the leak itself, not the
   broader evaluation robustness question.
